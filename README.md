@@ -31,13 +31,15 @@ To install this just type:
 python setup.py install
 ```
 
-or
+or actually, until possible merge with django-changuito:
 
 ```
-pip install django-changuito
+pip install git+https://github.com/txerpa/django-changuito.git@master
 ```
 
 ## Testing
+
+You need to install Sqlite3 and requirements in `requirements-test.txt`
 
 For running the test suite please do:
 
@@ -49,8 +51,9 @@ Or simply run tox (if you want to test all the envs)
 
 After installation is complete:
 
-1. add 'changuito' to your INSTALLED_APPS directive and
-2. Syncronize the DB: `./manage.py migrate`
+1. Add `changuito` to your INSTALLED_APPS directive
+3. Make migrations `./manage.py makemigrations changuito`
+2. Syncronize the DB: `./manage.py migrate changuito`
 
 ## Usage
 
@@ -102,6 +105,38 @@ def get_cart(request):
     </table>
 {% endblock %}
 ```
+
+## Customize your cart
+
+If you need a cart with more attributes you have to do the following:
+
+```python
+#settings.py
+CART_MODEL = 'my_app.MyCart'
+```
+
+```python
+#models.py
+from changuito.models import BaseCart
+
+class Cart(BaseCart):
+    transaction_id = models.CharField(max_length=50, blank=True)
+
+    class Meta:
+        # To ensure that the DB table is created for your app
+        db_table = 'new_shop_cart'
+```
+
+Finally:
+- Make migrations: `./manage.py makemigrations changuito`
+- Syncronize the DB: `./manage.py migrate changuito`
+
+NOTE: If you define CART_MODEL changuito's initial migration will not create its default `Cart` model.
+Then we recommend to migrate after have defined it to avoid create an unnecessary DB table.
+
+NOTE2: Also, if you need a special checkout or extra behavior you only have to inherit from `CartProxy`
+and overwrite it. Then you will have to create your own middleware that uses your new proxy.
+
 
 ## Some Info
 
