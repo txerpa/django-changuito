@@ -1,4 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
+from django.apps import apps
+from django.conf import settings
 
 from . import models
 
@@ -7,6 +9,12 @@ try:
 except ImportError:
     from datetime import datetime as timezone
 
+try:
+    cart_model = settings.CART_MODEL
+    app_label, model_name = cart_model.split('.')
+    Cart = apps.get_model(app_label, model_name)
+except AttributeError:
+    from .models import Cart
 
 CART_ID = 'CART-ID'
 
@@ -33,12 +41,12 @@ class CartProxy(object):
         try:
             # First search by user
             if not user.is_anonymous():
-                cart = models.Cart.objects.get(user=user, checked_out=False)
+                cart = Cart.objects.get(user=user, checked_out=False)
             # If not, search by request id
             else:
                 user = None
                 cart_id = request.session.get(CART_ID)
-                cart = models.Cart.objects.get(id=cart_id, checked_out=False)
+                cart = Cart.objects.get(id=cart_id, checked_out=False)
         except:
             cart = self.new(request, user=user)
 
@@ -52,13 +60,13 @@ class CartProxy(object):
     def get_cart(self, request):
         cart_id = request.session.get(CART_ID)
         if cart_id:
-            cart = models.Cart.objects.get(id=cart_id, checked_out=False)
+            cart = Cart.objects.get(id=cart_id, checked_out=False)
         else:
             cart = None
         return cart
 
     def new(self, request, user=None):
-        cart = models.Cart(creation_date=timezone.now(), user=user)
+        cart = Cart(creation_date=timezone.now(), user=user)
         cart.save()
         request.session[CART_ID] = cart.id
         return cart
@@ -100,9 +108,9 @@ class CartProxy(object):
 
     def delete_old_cart(self, user):
         try:
-            cart = models.Cart.objects.get(user=user)
+            cart = Cart.objects.get(user=user)
             cart.delete()
-        except models.Cart.DoesNotExist:
+        except Cart.DoesNotExist:
             pass
 
     def is_empty(self):
@@ -111,11 +119,11 @@ class CartProxy(object):
     def replace(self, cart_id, new_user):
         try:
             self.delete_old_cart(new_user)
-            cart = models.Cart.objects.get(pk=cart_id)
+            cart = Cart.objects.get(pk=cart_id)
             cart.user = new_user
             cart.save()
             return cart
-        except models.Cart.DoesNotExist:
+        except Cart.DoesNotExist:
             raise CartDoesNotExist
 
     def clear(self):
@@ -132,8 +140,8 @@ class CartProxy(object):
 
     def get_last_cart(self, user):
         try:
-            cart = models.Cart.objects.get(user=user, checked_out=False)
-        except models.Cart.DoesNotExist:
+            cart = Cart.objects.get(user=user, checked_out=False)
+        except Cart.DoesNotExist:
             self.cart.user = user
             self.cart.save()
             cart = self.cart
@@ -145,7 +153,7 @@ class CartProxy(object):
         try:
             cart.checked_out = True
             cart.save()
-        except models.Cart.DoesNotExist:
+        except Cart.DoesNotExist:
             pass
 
         return cart
