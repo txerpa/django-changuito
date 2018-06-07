@@ -40,10 +40,10 @@ def _create_item_in_db(user, cart_model, product=None, quantity=2,
                        unit_price=125):
     product = user if product is None else product
 
-    item = Item.objects.create(cart=cart_model,
-                               product=product,
+    item = Item.objects.create(product=product,
                                quantity=quantity,
                                unit_price=unit_price)
+    cart_model.items.add(item)
     return item
 
 
@@ -162,4 +162,4 @@ def test_cart_update_item(rq_anonuser, reg_user, rqst):
     assert cart.is_empty() is False
     assert item.quantity == 2
     new_cart = cart.update(product=item, quantity=3)
-    assert int(new_cart.item_set.all()[0].quantity) == 3
+    assert int(new_cart.items.all()[0].quantity) == 3

@@ -20,10 +20,10 @@ class CartItemsTestCase(TestCase):
 
     def _create_item_in_db(self, product=None, quantity=2, unit_price=125):
         product = self.user if product is None else product
-        item = Item.objects.create(cart=self.cart,
-                                   product=product,
+        item = Item.objects.create(product=product,
                                    quantity=quantity,
                                    unit_price=unit_price)
+        self.cart.items.add(item)
         return item
 
     def test_cart_creation(self):
@@ -32,7 +32,7 @@ class CartItemsTestCase(TestCase):
 
     def test_item_creation(self):
         item = self._create_item_in_db()
-        item_in_cart = self.cart.item_set.all()[0]
+        item_in_cart = self.cart.items.all()[0]
         self.assertEquals(item_in_cart, item,
                           "First item in cart should be equal the item we created")
         self.assertEquals(self.cart.is_empty(), False)
@@ -93,8 +93,8 @@ class CartItemsTestCase(TestCase):
         self.assertEquals(item_site.content_type, ctype_site)
 
         item_site.update_contenttype(obj_user)
-        self.assertEquals(item_site.quantity, 3)
-        self.assertEquals(item_site.total_price, 300)
+        self.assertEquals(item_site.quantity, 2)
+        self.assertEquals(item_site.total_price, 200)
 
     def test_item_update_price(self):
         item = self._create_item_in_db()

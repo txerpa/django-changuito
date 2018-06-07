@@ -8,3 +8,5 @@ django_changuito.egg-info
 .cache
 .coverage
 .ropeproject
+.idea/*
+.pytest_cache/

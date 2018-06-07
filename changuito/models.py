@@ -1,9 +1,9 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
 
 try:
-    from django.conf import settings
     User = settings.AUTH_USER_MODEL
 except (ImportError, AttributeError):
     from django.contrib.auth.models import User
@@ -13,31 +13,46 @@ try:
 except ImportError:
     from datetime import datetime as timezone
 
+try:
+    own_cart_model = settings.CART_MODEL
+except AttributeError:
+    own_cart_model = None
 
-class Cart(models.Model):
+
+class BaseCart(models.Model):
     user = models.ForeignKey(User, null=True, blank=True)
     creation_date = models.DateTimeField(verbose_name=_('creation date'),
                                          default=timezone.now)
     checked_out = models.BooleanField(default=False,
                                       verbose_name=_('checked out'))
+    items = models.ManyToManyField('changuito.Item', related_name='cart',
+                                   verbose_name=_('items'))
 
     class Meta:
+        abstract = True
         verbose_name = _('cart')
         verbose_name_plural = _('carts')
         ordering = ('-creation_date',)
         app_label = 'changuito'
 
     def __unicode__(self):
-        return "Cart id: %s" % self.id
+        return 'Cart id: %s' % self.id
 
     def is_empty(self):
-        return self.item_set.count() == 0
+        return self.items.count() == 0
 
     def total_price(self):
-        return sum(i.total_price for i in self.item_set.all())
+        return sum(i.total_price for i in self.items.all())
 
     def total_quantity(self):
-        return sum(i.quantity for i in self.item_set.all())
+        return sum(i.quantity for i in self.items.all())
+
+
+if not own_cart_model:
+
+    # To avoid extra DB table
+    class Cart(BaseCart):
+        pass
 
 
 class ItemManager(models.Manager):
@@ -51,7 +66,6 @@ class ItemManager(models.Manager):
 
 
 class Item(models.Model):
-    cart = models.ForeignKey(Cart, verbose_name=_('cart'))
     quantity = models.DecimalField(max_digits=18, decimal_places=3,
                                    verbose_name=_('quantity'))
     unit_price = models.DecimalField(max_digits=18, decimal_places=2,
@@ -99,15 +113,5 @@ class Item(models.Model):
     def update_contenttype(self, ctype_obj):
         new_content_type = ContentType.objects.get_for_model(type(ctype_obj),
                                                              for_concrete_model=False)
-        # Let's search if the new contenttype had previous items on the cart
-        try:
-            new_items = Item.objects.get(cart=self.cart,
-                                         object_id=self.object_id,
-                                         content_type=new_content_type)
-            self.quantity += new_items.quantity
-            new_items.delete()
-        except self.DoesNotExist:
-            pass
-
         self.content_type = new_content_type
         self.save()

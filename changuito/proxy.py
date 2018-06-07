@@ -45,7 +45,7 @@ class CartProxy(object):
         self.cart = cart
 
     def __iter__(self):
-        for item in self.cart.item_set.all():
+        for item in self.cart.items.all():
             yield item
 
     @classmethod
@@ -67,16 +67,15 @@ class CartProxy(object):
         try:
             ctype = ContentType.objects.get_for_model(type(product),
                                                       for_concrete_model=False)
-            item = models.Item.objects.get(cart=self.cart,
-                                           product=product,
-                                           content_type=ctype)
+            item = self.cart.items.get(product=product,
+                                       content_type=ctype)
         except models.Item.DoesNotExist:
-            item = models.Item()
-            item.cart = self.cart
-            item.product = product
-            item.unit_price = unit_price
-            item.quantity = quantity
-            item.save()
+            item = models.Item.objects.create(
+                product=product,
+                unit_price=unit_price,
+                quantity=quantity
+            )
+            self.cart.items.add(item)
         else:
             item.quantity += quantity
             item.save()
@@ -85,15 +84,14 @@ class CartProxy(object):
 
     def remove_item(self, item_id):
         try:
-            self.cart.item_set.get(id=item_id).delete()
+            self.cart.items.get(id=item_id).delete()
         except models.Item.DoesNotExist:
             raise ItemDoesNotExist
 
     def update(self, product, quantity, *args):
         try:
-            item = models.Item.objects.get(cart=self.cart,
-                                           object_id=product.id,
-                                           content_type=product.content_type)
+            item = self.cart.items.get(object_id=product.id,
+                                       content_type=product.content_type)
             item.quantity = quantity
             item.save()
         except models.Item.DoesNotExist:
@@ -120,10 +118,8 @@ class CartProxy(object):
         except models.Cart.DoesNotExist:
             raise CartDoesNotExist
 
-        return None
-
     def clear(self):
-        for item in self.cart.item_set.all():
+        for item in self.cart.items.all():
             item.delete()
 
     def get_item(self, item):
