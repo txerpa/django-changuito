@@ -1,7 +1,7 @@
+from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from django.contrib.contenttypes.models import ContentType
-from django.conf import settings
 
 try:
     User = settings.AUTH_USER_MODEL

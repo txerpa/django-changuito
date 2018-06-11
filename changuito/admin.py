@@ -1,6 +1,7 @@
-from django.contrib import admin
 from django.conf import settings
-from changuito.models import Item
+from django.contrib import admin
+
+from .models import Item
 
 try:
     own_cart_model = settings.CART_MODEL

@@ -1,8 +1,8 @@
-from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 
-from . import models
+from .models import Item
 
 try:
     from django.utils import timezone
@@ -57,7 +57,7 @@ class CartProxy(object):
             yield item
 
     @classmethod
-    def get_cart(self, request):
+    def get_cart(cls, request):
         cart_id = request.session.get(CART_ID)
         if cart_id:
             cart = Cart.objects.get(id=cart_id, checked_out=False)
@@ -77,8 +77,8 @@ class CartProxy(object):
                                                       for_concrete_model=False)
             item = self.cart.items.get(product=product,
                                        content_type=ctype)
-        except models.Item.DoesNotExist:
-            item = models.Item.objects.create(
+        except Item.DoesNotExist:
+            item = Item.objects.create(
                 product=product,
                 unit_price=unit_price,
                 quantity=quantity
@@ -93,7 +93,7 @@ class CartProxy(object):
     def remove_item(self, item_id):
         try:
             self.cart.items.get(id=item_id).delete()
-        except models.Item.DoesNotExist:
+        except Item.DoesNotExist:
             raise ItemDoesNotExist
 
     def update(self, product, quantity, *args):
@@ -102,7 +102,7 @@ class CartProxy(object):
                                        content_type=product.content_type)
             item.quantity = quantity
             item.save()
-        except models.Item.DoesNotExist:
+        except Item.DoesNotExist:
             raise ItemDoesNotExist
         return self.cart
 
@@ -132,8 +132,8 @@ class CartProxy(object):
 
     def get_item(self, item):
         try:
-            obj = models.Item.objects.get(pk=item)
-        except models.Item.DoesNotExist:
+            obj = Item.objects.get(pk=item)
+        except Item.DoesNotExist:
             raise ItemDoesNotExist
 
         return obj

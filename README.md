@@ -124,7 +124,7 @@ class Cart(BaseCart):
 
     class Meta:
         # To ensure that the DB table is created for your app
-        db_table = 'new_shop_cart'
+        db_table = 'my_app_cart'
 ```
 
 Finally:
