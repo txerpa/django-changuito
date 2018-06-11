@@ -1,5 +1,9 @@
+import django
+from django.conf import settings
+
+
 def pytest_configure():
-    from django.conf import settings
+
     if not settings.configured:
         settings.configure(
             DEBUG_PROPAGATE_EXCEPTIONS=True,
@@ -18,7 +22,6 @@ def pytest_configure():
         )
 
         try:
-            import django
             django.setup()
         except AttributeError:
             pass

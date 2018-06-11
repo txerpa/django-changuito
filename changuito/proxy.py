@@ -1,6 +1,5 @@
 from django.apps import apps
 from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
 
 from .models import Item
 
@@ -73,15 +72,12 @@ class CartProxy(object):
 
     def add(self, product, unit_price, quantity=1):
         try:
-            ctype = ContentType.objects.get_for_model(type(product),
-                                                      for_concrete_model=False)
-            item = self.cart.items.get(product=product,
-                                       content_type=ctype)
+            item = self.cart.items.get(content_object=product)
         except Item.DoesNotExist:
             item = Item.objects.create(
-                product=product,
+                quantity=quantity,
                 unit_price=unit_price,
-                quantity=quantity
+                content_object=product
             )
             self.cart.items.add(item)
         else:
@@ -98,8 +94,7 @@ class CartProxy(object):
 
     def update(self, product, quantity, *args):
         try:
-            item = self.cart.items.get(object_id=product.id,
-                                       content_type=product.content_type)
+            item = self.cart.items.get(content_object=product)
             item.quantity = quantity
             item.save()
         except Item.DoesNotExist:
