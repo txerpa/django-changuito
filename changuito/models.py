@@ -15,6 +15,11 @@ try:
 except AttributeError:
     from django.contrib.auth.models import User
 
+try:
+    cart_model = settings.CART_MODEL
+except AttributeError:
+    cart_model = None
+
 
 class BaseCart(models.Model):
     user = models.ForeignKey(User, null=True, blank=True, verbose_name='carts')
@@ -45,9 +50,11 @@ class BaseCart(models.Model):
         return sum(i.quantity for i in self.items.all())
 
 
-# Default cart
-class Cart(BaseCart):
-    pass
+if not cart_model:
+
+    # Default cart if not own cart model is defined in settings
+    class Cart(BaseCart):
+        pass
 
 
 class Item(models.Model):
