@@ -1,15 +1,15 @@
-from .proxy import CartProxy
+# -*- coding: utf-8 -*-
 
-try:
-    from django.utils.deprecation import MiddlewareMixin
-except ImportError:
-    MiddlewareMixin = object
+from __future__ import absolute_import, unicode_literals
+
+from .proxy import CART_ID, CartProxy
 
 
-class CartMiddleware(MiddlewareMixin):
+class CartMiddleware(object):
 
     def process_request(self, request):
 
         # You can't modify the session if the requested view has csrf protection
         if 'csrfmiddlewaretoken' not in request.POST:
             request.cart = CartProxy(request)
+            request.session[CART_ID] = request.cart.cart.id

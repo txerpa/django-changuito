@@ -1,10 +1,12 @@
-#! /usr/bin/env python
-from __future__ import print_function
+# -*- coding: utf-8 -*-
 
-import pytest
-import sys
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 import subprocess
+import sys
+
+import pytest
 
 
 PYTEST_ARGS = {
@@ -32,7 +34,7 @@ def flake8_main(args):
 
 def split_class_and_function(string):
     class_string, function_string = string.split('.', 1)
-    return "%s and %s" % (class_string, function_string)
+    return '{} and {}'.format(class_string, function_string)
 
 
 def is_function(string):
@@ -45,7 +47,7 @@ def is_class(string):
     return string[0] == string[0].upper()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
         sys.argv.remove('--nolint')
     except ValueError:

@@ -31,7 +31,7 @@ To install this just type:
 python setup.py install
 ```
 
-or actually, until possible merge with django-changuito:
+or actually, until possible merge with django-changuito or upload to PyPI:
 
 ```
 pip install git+https://github.com/txerpa/django-changuito.git@master
@@ -44,15 +44,14 @@ You need to install Sqlite3 and requirements in `requirements-test.txt`
 For running the test suite please do:
 
 ```
-python setup.py test 
+python runtests.py
 ```
 
-Or simply run tox (if you want to test all the envs)
+Or simply run `tox` (if you want to test all the envs)
 
 After installation is complete:
 
 1. Add `changuito` to your INSTALLED_APPS directive
-3. Make migrations `./manage.py makemigrations changuito`
 2. Syncronize the DB: `./manage.py migrate changuito`
 
 ## Usage
@@ -67,16 +66,16 @@ MIDDLEWARE_CLASES += ('changuito.middleware.CartMiddleware', )
 
 ```python
 # views.py
-from myproducts.models import Product
+from my_shop.models import Product
 
 def add_to_cart(request, product_id, quantity=1):
     product = Product.objects.get(id=product_id)
     cart = request.cart 
-    cart.add(product, product.unit_price, quantity)
+    cart.add_item(product, product.unit_price, quantity)
 
-def remove_from_cart(request, product_id):
+def remove_from_cart(request, item_id):
     cart = request.cart 
-    cart.remove_item(product_id)
+    cart.remove_item(item_id)
 
 def get_cart(request):
     return render_to_response('cart.html', dict(cart=CartProxy(request)))
@@ -96,8 +95,8 @@ def get_cart(request):
         </tr>
         {% for item in cart %}
         <tr>
-            <td>{{ item.product.name }}</td>
-            <td>{{ item.product.description }}</td>
+            <td>{{ item.content_object.name }}</td>
+            <td>{{ item.content_object.description }}</td>
             <td>{{ item.quantity }}</td>
             <td>{{ item.total_price }}</td>
         </tr>
@@ -112,7 +111,7 @@ If you need a cart with more attributes you have to do the following:
 
 ```python
 #settings.py
-CART_MODEL = 'my_app.MyCart'
+CART_MODEL = 'my_shop.Cart'
 ```
 
 ```python
@@ -124,24 +123,22 @@ class Cart(BaseCart):
 
     class Meta:
         # To ensure that the DB table is created for your app
-        db_table = 'my_app_cart'
+        db_table = 'my_shop_cart'
 ```
 
 Finally:
-- Make migrations: `./manage.py makemigrations changuito`
-- Syncronize the DB: `./manage.py migrate changuito`
 
-NOTE: If you define CART_MODEL changuito's initial migration will not create its default `Cart` model.
-Then we recommend to migrate after have defined it to avoid create an unnecessary DB table.
+- Syncronize the DB: `./manage.py migrate my_shop`
 
-NOTE2: Also, if you need a special checkout or extra behavior you only have to inherit from `CartProxy`
+
+NOTE: If you need a special checkout or extra behavior you only have to inherit from `CartProxy`
 and overwrite it. Then you will have to create your own middleware that uses your new proxy.
 
 
 ## Some Info
 
 This is from the original project that I've forked, I just renamed the project since
-is not officialy dead and continued my work on this project
+is not officialy dead and continued my work on this project.
 
 ```
 This project was abandoned and I got it and added tests and South migrations, 

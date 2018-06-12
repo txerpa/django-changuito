@@ -1,12 +1,15 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import, unicode_literals
+
+from datetime import datetime as timezone
+
 from django.apps import apps
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 
+from .exceptions import CartDoesNotExist, ItemDoesNotExist
 from .models import Item
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from datetime import datetime as timezone
 
 try:
     cart_model = settings.CART_MODEL
@@ -18,38 +21,10 @@ except AttributeError:
 CART_ID = 'CART-ID'
 
 
-class ItemAlreadyExists(Exception):
-    pass
-
-
-class ItemDoesNotExist(Exception):
-    pass
-
-
-class CartDoesNotExist(Exception):
-    pass
-
-
-class UserDoesNotExist(Exception):
-    pass
-
-
 class CartProxy(object):
-    def __init__(self, request):
-        user = request.user
-        try:
-            # First search by user
-            if not user.is_anonymous():
-                cart = Cart.objects.get(user=user, checked_out=False)
-            # If not, search by request id
-            else:
-                user = None
-                cart_id = request.session.get(CART_ID)
-                cart = Cart.objects.get(id=cart_id, checked_out=False)
-        except:
-            cart = self.new(request, user=user)
 
-        self.cart = cart
+    def __init__(self, request):
+        self.cart = self.__class__.get_cart(request)
 
     def __iter__(self):
         for item in self.cart.items.all():
@@ -57,33 +32,37 @@ class CartProxy(object):
 
     @classmethod
     def get_cart(cls, request):
-        cart_id = request.session.get(CART_ID)
-        if cart_id:
-            cart = Cart.objects.get(id=cart_id, checked_out=False)
-        else:
-            cart = None
-        return cart
-
-    def new(self, request, user=None):
-        cart = Cart(creation_date=timezone.now(), user=user)
-        cart.save()
-        request.session[CART_ID] = cart.id
-        return cart
-
-    def add(self, product, unit_price, quantity=1):
         try:
-            item = self.cart.items.get(content_object=product)
+            if request.user.is_anonymous:
+                if CART_ID in request.session and request.session[CART_ID]:
+                    cart_id = request.session.get(CART_ID)
+                    cart = Cart.objects.get(id=cart_id, checked_out=False)
+                else:
+                    cart = cls.new_cart()
+            else:
+                cart = cls.get_user_last_cart(request.user)
+        except CartDoesNotExist:
+            cart = cls.new_cart(user=request.user)
+        return cart
+
+    @classmethod
+    def new_cart(cls, user=None):
+        return Cart.objects.create(creation_date=timezone.now(), user=user)
+
+    def add_item(self, content_object, unit_price, quantity=1):
+        try:
+            item = self.cart.items.get(content_type=ContentType.objects
+                                       .get_for_model(content_object),
+                                       object_id=content_object.id)
+            item.quantity += quantity
+            item.save()
         except Item.DoesNotExist:
             item = Item.objects.create(
                 quantity=quantity,
                 unit_price=unit_price,
-                content_object=product
+                content_object=content_object
             )
             self.cart.items.add(item)
-        else:
-            item.quantity += quantity
-            item.save()
-
         return item
 
     def remove_item(self, item_id):
@@ -92,63 +71,52 @@ class CartProxy(object):
         except Item.DoesNotExist:
             raise ItemDoesNotExist
 
-    def update(self, product, quantity, *args):
+    def get_item(self, item_id):
         try:
-            item = self.cart.items.get(content_object=product)
+            item = self.cart.items.get(id=item_id)
+        except Item.DoesNotExist:
+            raise ItemDoesNotExist
+        return item
+
+    def clear_items(self):
+        for item in self.cart.items.all():
+            item.delete()
+
+    def is_empty(self):
+        return self.cart.is_empty()
+
+    def update_item_quantity(self, content_object, quantity):
+        try:
+            item = self.cart.items.get(content_type=ContentType.objects
+                                       .get_for_model(content_object),
+                                       object_id=content_object.id)
             item.quantity = quantity
             item.save()
         except Item.DoesNotExist:
             raise ItemDoesNotExist
-        return self.cart
 
-    def delete_old_cart(self, user):
+    @staticmethod
+    def delete_user_last_cart(user):
         try:
             cart = Cart.objects.get(user=user)
             cart.delete()
         except Cart.DoesNotExist:
             pass
 
-    def is_empty(self):
-        return self.cart.is_empty()
-
-    def replace(self, cart_id, new_user):
-        try:
-            self.delete_old_cart(new_user)
-            cart = Cart.objects.get(pk=cart_id)
-            cart.user = new_user
-            cart.save()
-            return cart
-        except Cart.DoesNotExist:
-            raise CartDoesNotExist
-
-    def clear(self):
-        for item in self.cart.items.all():
-            item.delete()
-
-    def get_item(self, item):
-        try:
-            obj = Item.objects.get(pk=item)
-        except Item.DoesNotExist:
-            raise ItemDoesNotExist
-
-        return obj
-
-    def get_last_cart(self, user):
+    @staticmethod
+    def get_user_last_cart(user):
         try:
             cart = Cart.objects.get(user=user, checked_out=False)
         except Cart.DoesNotExist:
-            self.cart.user = user
-            self.cart.save()
-            cart = self.cart
-
+            raise CartDoesNotExist
         return cart
+
+    @staticmethod
+    def n_carts(user):
+        return Cart.objects.filter(user=user).count()
 
     def checkout(self):
         cart = self.cart
-        try:
-            cart.checked_out = True
-            cart.save()
-        except Cart.DoesNotExist:
-            pass
-
+        cart.checked_out = True
+        cart.save()
         return cart

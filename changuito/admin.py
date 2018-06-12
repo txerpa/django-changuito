@@ -1,20 +1,19 @@
-from django.conf import settings
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import, unicode_literals
+
 from django.contrib import admin
+
+from changuito.models import Cart
 
 from .models import Item
 
-try:
-    own_cart_model = settings.CART_MODEL
-except AttributeError:
-    from changuito.models import Cart
-    own_cart_model = None
 
-if not own_cart_model:
+class CartAdmin(admin.ModelAdmin):
+    pass
 
-    class CartAdmin(admin.ModelAdmin):
-        pass
 
-    admin.site.register(Cart, CartAdmin)
+admin.site.register(Cart, CartAdmin)
 
 
 class ItemAdmin(admin.ModelAdmin):

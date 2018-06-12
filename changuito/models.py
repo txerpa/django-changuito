@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import, unicode_literals
+
+from datetime import datetime as timezone
+
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -6,17 +12,12 @@ from django.utils.translation import ugettext_lazy as _
 
 try:
     User = settings.AUTH_USER_MODEL
-except (ImportError, AttributeError):
+except AttributeError:
     from django.contrib.auth.models import User
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from datetime import datetime as timezone
 
 
 class BaseCart(models.Model):
-    user = models.ForeignKey(User, null=True, blank=True)
+    user = models.ForeignKey(User, null=True, blank=True, verbose_name='carts')
     creation_date = models.DateTimeField(verbose_name=_('creation date'),
                                          default=timezone.now)
     checked_out = models.BooleanField(default=False,
@@ -32,7 +33,7 @@ class BaseCart(models.Model):
         app_label = 'changuito'
 
     def __unicode__(self):
-        return 'Cart id: %s' % self.id
+        return 'Cart id: {}'.format(self.id)
 
     def is_empty(self):
         return self.items.count() == 0
@@ -44,7 +45,7 @@ class BaseCart(models.Model):
         return sum(i.quantity for i in self.items.all())
 
 
-# To avoid extra DB table
+# Default cart
 class Cart(BaseCart):
     pass
 
@@ -54,7 +55,8 @@ class Item(models.Model):
                                    verbose_name=_('quantity'))
     unit_price = models.DecimalField(max_digits=18, decimal_places=2,
                                      verbose_name=_('unit price'))
-    # product as generic relation
+
+    # Product as generic relation
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
@@ -66,13 +68,14 @@ class Item(models.Model):
         app_label = 'changuito'
 
     def __unicode__(self):
-        return u'{0} units of {1} {2}'.format(self.quantity,
-                                              self.product.__class__.__name__,
-                                              self.product.pk)
+        return '{0} units of {1} {2}'\
+            .format(self.quantity,
+                    self.content_object.__class__.__name__,
+                    self.content_object.pk)
 
+    @property
     def total_price(self):
         return float(self.quantity) * float(self.unit_price)
-    total_price = property(total_price)
 
     def update_quantity(self, quantity):
         self.quantity = quantity
@@ -80,4 +83,8 @@ class Item(models.Model):
 
     def update_price(self, price):
         self.unit_price = price
+        self.save()
+
+    def update_contenttype(self, content_object):
+        self.content_object = content_object
         self.save()

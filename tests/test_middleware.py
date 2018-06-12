@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import, unicode_literals
+
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from django.test import TestCase
@@ -7,6 +11,7 @@ from changuito.proxy import CartProxy
 
 
 class CartMiddlewareTestCase(TestCase):
+
     def setUp(self):
         self.cm = CartMiddleware()
         r = HttpRequest()

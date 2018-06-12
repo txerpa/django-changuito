@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import, unicode_literals
+
 import django
 from django.conf import settings
 
@@ -6,9 +10,14 @@ def pytest_configure():
 
     if not settings.configured:
         settings.configure(
+            DEBUF=False,
             DEBUG_PROPAGATE_EXCEPTIONS=True,
-            DATABASES={'default': {'ENGINE': 'django.db.backends.sqlite3',
-                       'NAME': ':memory:'}},
+            DATABASES={
+                'default': {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': ':memory:'
+                }
+            },
             INSTALLED_APPS=(
                 'django.contrib.auth',
                 'django.contrib.contenttypes',
