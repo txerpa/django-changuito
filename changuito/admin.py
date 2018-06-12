@@ -2,7 +2,6 @@
 
 from __future__ import absolute_import, unicode_literals
 
-from changuito.models import Cart
 from django.conf import settings
 from django.contrib import admin
 
