@@ -10,6 +10,7 @@ from .models import Item
 try:
     cart_model = settings.CART_MODEL
 except AttributeError:
+    cart_model = None
     from .models import Cart
 
 

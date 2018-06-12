@@ -52,7 +52,8 @@ Or simply run `tox` (if you want to test all the envs)
 After installation is complete:
 
 1. Add `changuito` to your INSTALLED_APPS directive
-2. Syncronize the DB: `./manage.py migrate changuito`
+2. Make migrations `./manage.py makemigrations changuito`
+3. Syncronize the DB: `./manage.py migrate changuito`
 
 ## Usage
 
@@ -127,11 +128,14 @@ class Cart(BaseCart):
 ```
 
 Finally:
-
+- Make migrations: `./manage.py makemigrations changuito`
 - Syncronize the DB: `./manage.py migrate my_shop`
 
 
-NOTE: If you need a special checkout or extra behavior you only have to inherit from `CartProxy`
+NOTE: If you define `CART_MODEL` changuito's initial migration will not create its default `Cart` model.
+Then we recommend to migrate after have defined it to avoid create an unnecessary DB table.
+
+NOTE2: If you need a special checkout or extra behavior you only have to inherit from `CartProxy`
 and overwrite it. Then you will have to create your own middleware that uses your new proxy.
 
 
