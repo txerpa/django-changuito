@@ -38,7 +38,7 @@ class BaseCart(models.Model):
         app_label = 'changuito'
 
     def __unicode__(self):
-        return 'Cart id: {}'.format(self.id)
+        return '{} - {} (id={})'.format(self.creation_date, self.user, self.id)
 
     def is_empty(self):
         return self.items.count() == 0
