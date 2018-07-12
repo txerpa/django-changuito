@@ -22,7 +22,7 @@ except AttributeError:
 
 
 class BaseCart(models.Model):
-    user = models.ForeignKey(User, null=True, blank=True, verbose_name='carts')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name='carts')
     creation_date = models.DateTimeField(verbose_name=_('creation date'),
                                          default=timezone.now)
     checked_out = models.BooleanField(default=False,
@@ -64,7 +64,7 @@ class Item(models.Model):
                                      verbose_name=_('unit price'))
 
     # Product as generic relation
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
 
