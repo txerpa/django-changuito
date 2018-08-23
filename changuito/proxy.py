@@ -105,7 +105,10 @@ class CartProxy(object):
 
     @staticmethod
     def get_user_last_cart(user):
-        return Cart.objects.filter(user=user, checked_out=False).order_by('creation_date').last()
+        cart = Cart.objects.filter(user=user, checked_out=False).order_by('creation_date').last()
+        if cart:
+            return cart
+        raise CartDoesNotExist
 
     @staticmethod
     def n_carts(user):
